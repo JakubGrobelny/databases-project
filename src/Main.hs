@@ -13,7 +13,7 @@ connectionInfo = connect defaultConnectInfo
 
 main :: IO Int
 main = do
-    conn <- connectionInfo
-    [Only i] <- query_ conn "select 2 + 2"
+    conn     <- connectionInfo
+    [Only i] <- query_ conn "SELECT 2 + 2"
     putStrLn $ show i
     return i
