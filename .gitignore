@@ -1,3 +1,7 @@
+*.fdb_latexmk
+*.fls
+*.log
+*.synctex.gz
 logfile
 dist
 dist-*
