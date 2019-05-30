@@ -78,8 +78,8 @@
           oraz nadawać uprawnienia innym użytkownikom (\texttt{GRANT}) aby
           móc utworzyć użytkownika \textbf{app} (\texttt{CREATE USER}).
     \item{\textbf{app}} -- użytkownik mogący odczytywać i modyfikować 
-          zawartości wszystkich tabel (\texttt{SELECT, UPDATE, INSERT}) ale niemogący 
-          ich modyfikować.
+          zawartości wszystkich tabel (\texttt{SELECT, UPDATE, INSERT}) ale 
+          niemogący modyfikować schematu bazy danych.
 \end{itemize}
 
 \section{Sposób implementacji funkcji API}
@@ -95,6 +95,9 @@ jakieś działanie nie jest zamrożony -- jeżeli jest, to zwracany będzie bł
 
 Jeżeli członek nie istnieje, to zostanie utworzony poprzez dodanie odpowiedniej
 krotki do tabeli \textit{Member}.
+
+Jeżeli nie istnieje jakiś projekt bądź organ władzy wspomniany w argumentach którejś
+z funkcji, to wówczas również powinien zostać dodany do bazy danych.
 
 \begin{itemize}
     \item{\texttt{open} -- w trybie \texttt{init} funkcja \texttt{open} utworzy
@@ -132,6 +135,9 @@ krotki do tabeli \textit{Member}.
           którzy je inicjowali, obliczy sumaryczne bilanse głosów i wykluczy
           z wyniku tych członków, dla których ów bilans był pozytywny.}
 \end{itemize}
+
+API zostanie zaimplementowane we jęzku \textit{Haskell} przy użyciu biblioteki
+\texttt{postgresql-simple}.
 
 \end{document}
 
