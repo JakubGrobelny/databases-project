@@ -3,17 +3,25 @@
 module Main where
 
 import Database.PostgreSQL.Simple
+import Data.String
 
-connectionInfo :: IO (Connection)
-connectionInfo = connect defaultConnectInfo 
-    {
-      connectDatabase = "testdb"
-    , connectUser     = "admin"
-    }
+createConnection :: String -> String -> String -> IO (Connection)
+createConnection db login passwd = connect defaultConnectInfo
+    { connectDatabase = db
+    , connectUser     = login
+    , connectPassword = passwd }
+
+queryFromFile :: String -> IO Query
+queryFromFile filename = do
+    str <- readFile filename
+    return $ fromString str
 
 main :: IO Int
 main = do
-    conn     <- connectionInfo
-    [Only i] <- query_ conn "SELECT 2 + 2"
+    connection <- createConnection "partydb" "init" "abc123" -- just for testing
+    q <- queryFromFile "src/sql/schema.sql"
+    _ <- execute_ connection q
+    [Only i] <- query_ connection "SELECT 2 + 2"
     putStrLn $ show i
+    close connection
     return i
