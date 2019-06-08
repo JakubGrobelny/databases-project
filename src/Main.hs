@@ -5,16 +5,17 @@ module Main where
 import Database.PostgreSQL.Simple
 import Data.String
 
+import Parser
+
 createConnection :: String -> String -> String -> IO (Connection)
 createConnection db login passwd = connect defaultConnectInfo
     { connectDatabase = db
     , connectUser     = login
-    , connectPassword = passwd }
+    , connectPassword = passwd 
+    }
 
 queryFromFile :: String -> IO Query
-queryFromFile filename = do
-    str <- readFile filename
-    return $ fromString str
+queryFromFile filename = fromString <$> readFile filename
 
 main :: IO Int
 main = do

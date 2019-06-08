@@ -12,10 +12,10 @@ CREATE TABLE Project (
 );
 
 CREATE TABLE Member (
-    id              BIGINT    PRIMARY KEY,
-    passwd_hash     CHAR(128) NOT NULL,
-    last_activity   TIMESTAMP NOT NULL,
-    is_leader       BOOLEAN   DEFAULT false NOT NULL
+    id            BIGINT    PRIMARY KEY,
+    passwd        CHAR(128) NOT NULL,
+    last_activity TIMESTAMP NOT NULL,
+    is_leader     BOOLEAN   DEFAULT false NOT NULL
 );
 
 CREATE TABLE Action (
@@ -36,9 +36,9 @@ CREATE TABLE Action (
 );
 
 CREATE TABLE Vote (
-    memberid    BIGINT  NOT NULL,
-    actionid    BIGINT  NOT NULL,
-    is_upvote   BOOLEAN NOT NULL,
+    memberid  BIGINT  NOT NULL,
+    actionid  BIGINT  NOT NULL,
+    is_upvote BOOLEAN NOT NULL,
 
     PRIMARY KEY (memberid, actionid),
 
