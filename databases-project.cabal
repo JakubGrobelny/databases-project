@@ -18,7 +18,8 @@ cabal-version:       >=1.10
 
 executable databases-project
   main-is:             Main.hs
-  other-modules:       Parser
+  other-modules:       Parser,
+                       Functions
   -- other-extensions:
   build-depends:       base >=4.12 && <4.13,
                        postgresql-simple,

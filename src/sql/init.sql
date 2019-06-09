@@ -50,3 +50,5 @@ CREATE TABLE Vote (
         FOREIGN KEY (actionid)
         REFERENCES Action (id)
 );
+
+CREATE USER app WITH ENCRYPTED PASSWORD 'qwerty';
