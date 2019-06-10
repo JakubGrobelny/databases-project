@@ -7,6 +7,11 @@ import Data.Aeson
 import Data.Text
 import Parser
 
+import qualified Data.ByteString.Lazy as B
+import qualified Data.Text as T
+import Data.Text.Encoding (decodeUtf8)
+
+
 data ResultValue
     = ResultNum Integer
     | ResultBool Bool
@@ -23,7 +28,9 @@ data FunctionResult
     = ResultError
     | ResultOk [Tuple]
     | ResultEmptyOK
-    deriving Show
+
+instance Show FunctionResult where
+    show = T.unpack . decodeUtf8 . B.toStrict . encode
 
 maybeToResult :: Maybe Data -> FunctionResult
 maybeToResult Nothing = ResultError

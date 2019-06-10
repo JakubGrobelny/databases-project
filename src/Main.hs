@@ -6,6 +6,7 @@ import Database.PostgreSQL.Simple
 import Data.String
 import System.Environment (getArgs)
 import System.IO (isEOF)
+import Text.Printf (printf)
 import Data.Aeson
 import Control.Exception
 import Parser
@@ -103,6 +104,12 @@ runApp input =
         validate (Open _ : fs) = False
         validate (_ : fs) = validate fs
 
+printfLn :: String -> IO ()
+printfLn str = printf str >> printf "\n"
+
+printResults :: [Maybe Data] -> IO ()
+printResults rs = mapM_ putStrLn $ map (show . maybeToResult) rs
+
 main :: IO ()
 main = do
     argc <- getArgs
@@ -114,7 +121,7 @@ main = do
             if shouldInit
                 then do
                     results <- initialize input
-                    mapM_ putStrLn $ map (show . encode . maybeToResult) results
+                    printResults results
                 else do
                     results <- runApp input
-                    mapM_ putStrLn $ map (show . encode . maybeToResult) results
+                    printResults results
