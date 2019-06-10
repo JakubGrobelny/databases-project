@@ -108,7 +108,13 @@ main = do
     argc <- getArgs
     let shouldInit = isInit argc
     input <- readInput
-    -- if shouldInit
-    --     then initialize input
-    --     else runApp input
-    return ()
+    case input of
+        Nothing -> putStrLn "Input does not match specification!"
+        Just input -> 
+            if shouldInit
+                then do
+                    results <- initialize input
+                    mapM_ putStrLn $ map (show . encode . maybeToResult) results
+                else do
+                    results <- runApp input
+                    mapM_ putStrLn $ map (show . encode . maybeToResult) results
