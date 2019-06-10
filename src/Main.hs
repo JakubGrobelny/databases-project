@@ -46,23 +46,21 @@ readInput = do
             return $ function >>= \f ->
                 tail >>= \t -> Just $ f : t
 
-splitInitInput :: [APIFunction] -> Maybe (DatabaseInfo, [APIFunction])
-splitInitInput (Open db : fs) =
+splitInput :: [APIFunction] 
+           -> ([APIFunction] -> Bool)
+           -> Maybe (DatabaseInfo, [APIFunction])
+splitInput (Open db : fs) validate =
     if validate fs
         then Just (db, fs)
         else Nothing
-    where
-        validate :: [APIFunction] -> Bool
-        validate [] = True
-        validate (Leader _ : fs) = validate fs
-splitInitInput _ = Nothing
+splitInput _ _ = Nothing
 
 failAll :: [APIFunction] -> [Maybe a]
 failAll = map (const Nothing)
 
 initialize :: [APIFunction] -> IO ([Maybe Data])
 initialize input =
-    case splitInitInput input of
+    case splitInput input validate of
         Nothing -> return $ failAll input 
         Just (db, fs) -> do
             maybeConn <- createConnection db
@@ -74,15 +72,36 @@ initialize input =
                     results <- runFunctions conn fs
                     close conn
                     return $ Just NoData : results
-
+    where
+        validate :: [APIFunction] -> Bool
+        validate [] = True
+        validate (Leader _ : fs) = validate fs
+                
 runFunctions :: Connection -> [APIFunction] -> IO ([Maybe Data])
 runFunctions _ [] = return []
 runFunctions conn (f:fs) = do
     result <- executeFunction conn f
     tail <- runFunctions conn fs
     return $ result : tail
-        
-runApp = undefined
+
+runApp :: [APIFunction] -> IO ([Maybe Data])
+runApp input =
+    case splitInput input validate of
+        Nothing -> return $ failAll input
+        Just (db, fs) -> do
+            maybeConn <- createConnection db
+            case maybeConn of
+                Nothing -> return $ failAll input
+                Just conn -> do
+                    results <- runFunctions conn fs
+                    close conn
+                    return $ Just NoData : results
+    where
+        validate :: [APIFunction] -> Bool
+        validate [] = True
+        validate (Leader _ : fs) = False
+        validate (Open _ : fs) = False
+        validate (_ : fs) = validate fs
 
 main :: IO ()
 main = do
