@@ -61,8 +61,7 @@ grantAppPermissions conn dbName = do
     _ <- execute_ conn query
     return ()
     where
-        query = fromString $ "GRANT CONNECT ON DATABASE "++ dbName ++" TO app;\
-                             \GRANT USAGE ON SCHEMA public TO app;\
+        query = fromString $ "GRANT USAGE ON SCHEMA public TO app;\
                              \GRANT SELECT, INSERT, UPDATE \
                              \ON ALL TABLES IN SCHEMA public TO app;"
 
