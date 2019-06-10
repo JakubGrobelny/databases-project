@@ -1,0 +1,2 @@
+{"open": {"database":"partydb", "login":"app", "password":"qwerty"}}
+{"protest":{"timestamp":10020, "member":1, "password":"abc1", "action":3, "project":4, "authority":5}}
