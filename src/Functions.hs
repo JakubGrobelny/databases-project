@@ -6,11 +6,13 @@ import Database.PostgreSQL.Simple
 import Data.Aeson
 import Data.Text
 import Parser
-
+import Data.String
 import qualified Data.ByteString.Lazy as B
 import qualified Data.Text as T
 import Data.Text.Encoding (decodeUtf8)
 
+queryFromFile :: String -> IO Query
+queryFromFile filename = fromString <$> readFile filename
 
 data ResultValue
     = ResultNum Integer
@@ -53,5 +55,21 @@ instance ToJSON FunctionResult where
         "status" .= ("OK" :: Text),
         "data" .= toJSON d ]
 
-executeFunction :: Connection -> APIFunction -> IO (Maybe Data)
-executeFunction _ _ = undefined
+isUnique :: Connection -> Integer -> IO Bool
+isUnique conn id = do
+    [Only unique] <- query conn "SELECT is_unique(?)" (Only id)
+    return unique
+
+executeFunction :: Connection -> APIFunction -> IO FunctionResult
+executeFunction conn (Leader usr) = do
+    unique <- isUnique conn $ member usr
+    if not unique
+        then return ResultError
+        else do
+            query <- queryFromFile "src/sql/add_user.sql"
+            _ <- execute conn query (member usr, passwd usr, time usr, True)
+            return $ ResultEmptyOK
+
+-- executeFunction conn (Leader user) = 
+
+

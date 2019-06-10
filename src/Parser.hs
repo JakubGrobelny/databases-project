@@ -156,4 +156,4 @@ instance FromJSON APIFunction where
         Downvote <$> o .: "downvote",
         Actions  <$> o .: "actions",
         Projects <$> o .: "projects",
-        Votes    <$> o .: "votes"]
+        Votes    <$> o .: "votes" ]

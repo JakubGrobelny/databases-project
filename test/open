@@ -1,1 +1,4 @@
-{"open":{"database":"partydb", "login":"init", "password":"abc123"}}
+{"open": {"database":"partydb", "login":"init", "password":"abc123"}}
+{"leader": {"timestamp":10000, "password":"abc1", "member":1}}
+{"leader": {"timestamp":10001, "password":"abc2", "member":2}}
+{"leader": {"timestamp":10002, "password":"abc3", "member":1}}

@@ -1,2 +1,12 @@
 path:
 var/lib/postgres/data
+chown postgres:
+run/postgresql 
+
+DROP FUNCTION IF EXISTS is_unique;
+DROP TABLE IF EXISTS Vote;
+DROP TABLE IF EXISTS Action;
+DROP TABLE IF EXISTS Member;
+DROP TABLE IF EXISTS Project;
+DROP TABLE IF EXISTS Authority;
+DROP ROLE IF EXISTS app;

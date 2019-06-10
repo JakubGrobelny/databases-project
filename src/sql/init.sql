@@ -13,7 +13,7 @@ CREATE TABLE Project (
 
 CREATE TABLE Member (
     id            BIGINT    PRIMARY KEY,
-    passwd        CHAR(128) NOT NULL,
+    passwd        VARCHAR   NOT NULL,
     last_activity TIMESTAMP NOT NULL,
     is_leader     BOOLEAN   DEFAULT false NOT NULL
 );
@@ -52,3 +52,17 @@ CREATE TABLE Vote (
 );
 
 CREATE USER app WITH ENCRYPTED PASSWORD 'qwerty';
+
+CREATE FUNCTION is_unique(BIGINT)
+    RETURNS BOOLEAN AS $X$
+    SELECT $1 NOT IN (
+        (SELECT id FROM Member)
+        UNION
+        (SELECT id FROM Authority)
+        UNION
+        (SELECT id FROM Project)
+        UNION
+        (SELECT id FROM Action)
+    )
+$X$ LANGUAGE SQL STABLE;
+
