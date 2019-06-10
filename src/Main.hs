@@ -7,15 +7,25 @@ import Data.String
 import System.Environment (getArgs)
 import System.IO (isEOF)
 import Data.Aeson
+import Control.Exception
 import Parser
 import Functions
 
-createConnection :: String -> String -> String -> IO (Connection)
-createConnection db login passwd = connect defaultConnectInfo
-    { connectDatabase = db
-    , connectUser     = login
-    , connectPassword = passwd 
-    }
+createConnection :: DatabaseInfo -> IO (Maybe Connection)
+createConnection DatabaseInfo {db=name, login=login, dbPasswd=passwd} = do
+    conn <- tryConnect (createConnection' name login passwd)
+    case conn of
+        Left _ -> return Nothing
+        Right conn -> return $ Just conn
+    where
+        tryConnect :: IO Connection -> IO (Either SomeException Connection)
+        tryConnect c = try c :: IO  (Either SomeException Connection)
+        createConnection' :: String -> String -> String -> IO (Connection)
+        createConnection' db login passwd = connect defaultConnectInfo
+            { connectDatabase = db
+            , connectUser     = login
+            , connectPassword = passwd 
+            }
 
 queryFromFile :: String -> IO Query
 queryFromFile filename = fromString <$> readFile filename
@@ -25,60 +35,60 @@ isInit [] = False
 isInit ["--init"] = True
 isInit _ = error "Invalid command line argument"
 
-readInput :: IO [APIFunction]
+readInput :: IO (Maybe [APIFunction])
 readInput = do
     eof <- isEOF
     if eof
-        then return []
+        then return $ Just []
         else do
             input <- getLine
+            tail <- readInput
             let function = decode $ fromString input
-            case function of
-                Nothing -> error "Invalid JSON input!"
-                Just f -> do
-                    tail <- readInput
-                    return $ f : tail
+            return $ function >>= \f ->
+                tail >>= \t -> Just $ f : t
 
-validateInitInput :: [APIFunction] -> (DatabaseInfo, [APIFunction])
-validateInitInput (Open db : fs) = 
+splitInitInput :: [APIFunction] -> Maybe (DatabaseInfo, [APIFunction])
+splitInitInput (Open db : fs) =
     if validate fs
-        then (db, fs)
-        else error "Invalid JSON input!"
+        then Just (db, fs)
+        else Nothing
     where
         validate :: [APIFunction] -> Bool
         validate [] = True
         validate (Leader _ : fs) = validate fs
-        validate _ = False
-validateInitInput _ = error "Invalid JSON input!"
+splitInitInput _ = Nothing
 
-initialize :: [APIFunction] -> IO ()
-initialize input = do
-    let (dbInfo, leaders) = validateInitInput input
-    conn <- createConnection (db dbInfo) (login dbInfo) (dbPasswd dbInfo)
-    query <- queryFromFile "src/sql/init.sql"
-    _ <- execute_ conn query
-    createLeaders conn leaders
-    close conn 
-    where
-        createLeaders :: Connection -> [APIFunction] -> IO ()
-        createLeaders _ [] = return ()
-        createLeaders conn (l:ls) = do
-            executeFunction conn l
-            createLeaders conn ls
-            
+failAll :: [APIFunction] -> [Maybe a]
+failAll = map (const Nothing)
+
+initialize :: [APIFunction] -> IO ([Maybe Data])
+initialize input =
+    case splitInitInput input of
+        Nothing -> return $ failAll input 
+        Just (db, fs) -> do
+            maybeConn <- createConnection db
+            case maybeConn of
+                Nothing -> return $ failAll input
+                Just conn -> do
+                    results <- runFunctions conn fs
+                    close conn
+                    return $ Just NoData : results
+
+runFunctions :: Connection -> [APIFunction] -> IO ([Maybe Data])
+runFunctions _ [] = return []
+runFunctions conn (f:fs) = do
+    result <- executeFunction conn f
+    tail <- runFunctions conn fs
+    return $ result : tail
+        
+runApp = undefined
+
 main :: IO ()
 main = do
     argc <- getArgs
     let shouldInit = isInit argc
     input <- readInput
-    if shouldInit
-        then initialize input
-        else return ()
-    
-    -- connection <- createConnection "partydb" "init" "abc123" -- just for testing
-    -- q <- queryFromFile "src/sql/schema.sql"
-    -- _ <- execute_ connection q
-    -- [Only i] <- query_ connection "SELECT 2 + 2"
-    -- putStrLn $ show i
-    -- close connection
-    -- return i
+    -- if shouldInit
+    --     then initialize input
+    --     else runApp input
+    return ()

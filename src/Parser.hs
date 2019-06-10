@@ -3,6 +3,7 @@
 module Parser where
 
 import Data.Aeson
+import Data.Foldable
 
 data DatabaseInfo = DatabaseInfo 
     { db       :: String
@@ -131,33 +132,6 @@ instance FromJSON TrollsTimestamp where
         timestamp <- o .: "timestamp"
         return TrollsTimestamp{..}
 
-data APIFunctionJSON = APIFunctionJSON
-    { trolls   :: Maybe TrollsTimestamp
-    , open     :: Maybe DatabaseInfo
-    , leader   :: Maybe UserData
-    , protest  :: Maybe NewAction
-    , support  :: Maybe NewAction
-    , upvote   :: Maybe NewVote
-    , downvote :: Maybe NewVote
-    , actions  :: Maybe Actions
-    , projects :: Maybe Projects
-    , votes    :: Maybe Votes
-    } deriving Show
-
-instance FromJSON APIFunctionJSON where
-    parseJSON = withObject "Function" $ \o -> do
-        trolls   <- o .:? "trolls"
-        open     <- o .:? "open"
-        leader   <- o .:? "leader"
-        protest  <- o .:? "protest"
-        support  <- o .:? "support"
-        upvote   <- o .:? "upvote"
-        downvote <- o .:? "downvote"
-        actions  <- o .:? "actions"
-        projects <- o .:? "projects"
-        votes    <- o .:? "votes"
-        return APIFunctionJSON{..}
-
 data APIFunction
     = Trolls TrollsTimestamp
     | Open DatabaseInfo
@@ -171,22 +145,15 @@ data APIFunction
     | Votes Votes
     deriving Show
 
-instance FromJSON APIFunction where
-    parseJSON = withObject "Function" $ \o -> do
-        functions <- parseJSON $ Object o
-        case extractAPIFunction functions of
-            Nothing -> error "Invalid JSON input!"
-            Just f  -> return f
-
-extractAPIFunction :: APIFunctionJSON -> Maybe APIFunction
-extractAPIFunction APIFunctionJSON {trolls = Just t} = Just $ Trolls t
-extractAPIFunction APIFunctionJSON {open = Just o} = Just $ Open o
-extractAPIFunction APIFunctionJSON {leader = Just l} = Just $ Leader l
-extractAPIFunction APIFunctionJSON {protest = Just p} = Just $ Protest p
-extractAPIFunction APIFunctionJSON {support = Just s} = Just $ Support s
-extractAPIFunction APIFunctionJSON {upvote = Just u} = Just $ Upvote u
-extractAPIFunction APIFunctionJSON {downvote = Just d} = Just $ Downvote d
-extractAPIFunction APIFunctionJSON {actions = Just a} = Just $ Actions a
-extractAPIFunction APIFunctionJSON {projects = Just p} = Just $ Projects p
-extractAPIFunction APIFunctionJSON {votes = Just v} = Just $ Votes v
-extractAPIFunction _ = Nothing
+instance FromJSON APIFunction where 
+    parseJSON = withObject "Function" $ \o -> asum [
+        Trolls   <$> o .: "trolls",
+        Open     <$> o .: "open",
+        Leader   <$> o .: "leader",
+        Protest  <$> o .: "protest",
+        Support  <$> o .: "support",
+        Upvote   <$> o .: "upvote",
+        Downvote <$> o .: "downvote",
+        Actions  <$> o .: "actions",
+        Projects <$> o .: "projects",
+        Votes    <$> o .: "votes"]
