@@ -57,7 +57,7 @@ instance FromJSON NewAction where
 
 data NewVote = NewVote 
     { newVoteUser :: UserData
-    , voteAction  :: Integer 
+    , voteAction  :: Integer
     } deriving Show
 
 instance FromJSON NewVote where

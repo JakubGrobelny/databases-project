@@ -56,17 +56,28 @@ splitInput _ _ = Nothing
 failAll :: [APIFunction] -> [FunctionResult]
 failAll = map (const ResultError)
 
+grantAppPermissions :: Connection -> String -> IO ()
+grantAppPermissions conn dbName = do
+    _ <- execute_ conn query
+    return ()
+    where
+        query = fromString $ "GRANT CONNECT ON DATABASE "++ dbName ++" TO app;\
+                             \GRANT USAGE ON SCHEMA public TO app;\
+                             \GRANT SELECT, INSERT, UPDATE \
+                             \ON ALL TABLES IN SCHEMA public TO app;"
+
 initialize :: [APIFunction] -> IO ([FunctionResult])
 initialize input =
     case splitInput input validate of
         Nothing -> return $ failAll input 
-        Just (db, fs) -> do
-            maybeConn <- createConnection db
+        Just (dbData, fs) -> do
+            maybeConn <- createConnection dbData
             case maybeConn of
                 Nothing -> return $ failAll input
                 Just conn -> do
                     initQuery <- queryFromFile "src/sql/init.sql"
                     _ <- execute_ conn initQuery
+                    grantAppPermissions conn (db dbData)
                     results <- runFunctions conn fs
                     close conn
                     return $ ResultEmptyOK : results
@@ -74,7 +85,8 @@ initialize input =
         validate :: [APIFunction] -> Bool
         validate [] = True
         validate (Leader _ : fs) = validate fs
-                
+        validate _ = False
+
 runFunctions :: Connection -> [APIFunction] -> IO [FunctionResult]
 runFunctions _ [] = return []
 runFunctions conn (f:fs) = do

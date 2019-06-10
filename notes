@@ -3,7 +3,14 @@ var/lib/postgres/data
 chown postgres:
 run/postgresql 
 
+DROP FUNCTION IF EXISTS is_frozen;
 DROP FUNCTION IF EXISTS is_unique;
+DROP FUNCTION IF EXISTS member_exists;
+DROP FUNCTION IF EXISTS project_exists;
+DROP FUNCTION IF EXISTS authority_exists;
+DROP FUNCTION IF EXISTS add_member;
+DROP FUNCTION IF EXISTS add_action;
+DROP FUNCTION IF EXISTS correct_password;
 DROP TABLE IF EXISTS Vote;
 DROP TABLE IF EXISTS Action;
 DROP TABLE IF EXISTS Member;

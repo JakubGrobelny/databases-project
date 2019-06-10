@@ -1,3 +1,18 @@
+DROP FUNCTION IF EXISTS is_frozen;
+DROP FUNCTION IF EXISTS is_unique;
+DROP FUNCTION IF EXISTS member_exists;
+DROP FUNCTION IF EXISTS project_exists;
+DROP FUNCTION IF EXISTS authority_exists;
+DROP FUNCTION IF EXISTS correct_password;
+DROP TABLE IF EXISTS Vote;
+DROP TABLE IF EXISTS Action;
+DROP TABLE IF EXISTS Member;
+DROP TABLE IF EXISTS Project;
+DROP TABLE IF EXISTS Authority;
+DROP ROLE IF EXISTS app;
+-- for debugging
+
+
 CREATE TABLE Authority (
     id BIGINT PRIMARY KEY
 );
@@ -24,7 +39,7 @@ CREATE TABLE Action (
     projectid  BIGINT  NOT NULL,
     memberid   BIGINT  NOT NULL,
     upvotes    BIGINT  DEFAULT 0 NOT NULL,
-    downvlotes BIGINT  DEFAULT 0 NOT NULL,
+    downvwotes BIGINT  DEFAULT 0 NOT NULL,
 
     CONSTRAINT action_projectid_fkey
         FOREIGN KEY (projectid)
@@ -66,3 +81,30 @@ CREATE FUNCTION is_unique(BIGINT)
     )
 $X$ LANGUAGE SQL STABLE;
 
+CREATE FUNCTION is_frozen(BIGINT, BIGINT)
+    RETURNS BOOLEAN AS $X$
+    SELECT (to_timestamp($2) - last_activity) >= '365 days'
+    FROM Member
+    WHERE id = $1
+$X$ LANGUAGE SQL STABLE;
+
+CREATE FUNCTION correct_password(BIGINT, VARCHAR)
+    RETURNS BOOLEAN AS $X$
+    WITH pswhash AS (SELECT passwd FROM Member WHERE id=$1)
+    SELECT crypt($2, passwd) = passwd FROM pswhash
+$X$ LANGUAGE SQL STABLE;
+
+CREATE FUNCTION member_exists(BIGINT)
+    RETURNS BOOLEAN AS $X$
+    SELECT $1 IN (SELECT id FROM Member)
+$X$ LANGUAGE SQL STABLE;
+
+CREATE FUNCTION project_exists(BIGINT)
+    RETURNS BOOLEAN AS $X$
+    SELECT $1 IN (SELECT id FROM Project)
+$X$ LANGUAGE SQL STABLE;
+
+CREATE FUNCTION authority_exists(BIGINT)
+    RETURNS BOOLEAN AS $X$
+    SELECT $1 IN (SELECT id FROM Authority)
+$X$ LANGUAGE SQL STABLE;
