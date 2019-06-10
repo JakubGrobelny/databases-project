@@ -25,10 +25,10 @@ data FunctionResult
     | ResultEmptyOK
     deriving Show
 
-resultFromMaybe :: Maybe Data -> FunctionResult
-resultFromMaybe Nothing = ResultError
-resultFromMaybe (Just NoData) = ResultEmptyOK
-resultFromMaybe (Just (Data d)) = ResultOk d
+maybeToResult :: Maybe Data -> FunctionResult
+maybeToResult Nothing = ResultError
+maybeToResult (Just NoData) = ResultEmptyOK
+maybeToResult (Just (Data d)) = ResultOk d
 
 instance ToJSON ResultValue where
     toJSON (ResultNum i) = toJSON i
