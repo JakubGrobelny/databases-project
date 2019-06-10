@@ -3,8 +3,8 @@
 module Main where
 
 import Database.PostgreSQL.Simple
-import Data.String
 import System.Environment (getArgs)
+import Data.String
 import System.IO (isEOF)
 import Text.Printf (printf)
 import Data.Aeson
@@ -27,9 +27,6 @@ createConnection DatabaseInfo {db=name, login=login, dbPasswd=passwd} = do
             , connectUser     = login
             , connectPassword = passwd 
             }
-
-queryFromFile :: String -> IO Query
-queryFromFile filename = fromString <$> readFile filename
 
 isInit :: [String] -> Bool
 isInit ["--init"] = True
@@ -56,10 +53,10 @@ splitInput (Open db : fs) validate =
         else Nothing
 splitInput _ _ = Nothing
 
-failAll :: [APIFunction] -> [Maybe a]
-failAll = map (const Nothing)
+failAll :: [APIFunction] -> [FunctionResult]
+failAll = map (const ResultError)
 
-initialize :: [APIFunction] -> IO ([Maybe Data])
+initialize :: [APIFunction] -> IO ([FunctionResult])
 initialize input =
     case splitInput input validate of
         Nothing -> return $ failAll input 
@@ -72,20 +69,20 @@ initialize input =
                     _ <- execute_ conn initQuery
                     results <- runFunctions conn fs
                     close conn
-                    return $ Just NoData : results
+                    return $ ResultEmptyOK : results
     where
         validate :: [APIFunction] -> Bool
         validate [] = True
         validate (Leader _ : fs) = validate fs
                 
-runFunctions :: Connection -> [APIFunction] -> IO ([Maybe Data])
+runFunctions :: Connection -> [APIFunction] -> IO [FunctionResult]
 runFunctions _ [] = return []
 runFunctions conn (f:fs) = do
     result <- executeFunction conn f
     tail <- runFunctions conn fs
     return $ result : tail
 
-runApp :: [APIFunction] -> IO ([Maybe Data])
+runApp :: [APIFunction] -> IO [FunctionResult]
 runApp input =
     case splitInput input validate of
         Nothing -> return $ failAll input
@@ -96,7 +93,7 @@ runApp input =
                 Just conn -> do
                     results <- runFunctions conn fs
                     close conn
-                    return $ Just NoData : results
+                    return $ ResultEmptyOK : results
     where
         validate :: [APIFunction] -> Bool
         validate [] = True
@@ -107,8 +104,8 @@ runApp input =
 printfLn :: String -> IO ()
 printfLn str = printf str >> printf "\n"
 
-printResults :: [Maybe Data] -> IO ()
-printResults rs = mapM_ putStrLn $ map (show . maybeToResult) rs
+printResults :: [FunctionResult] -> IO ()
+printResults rs = mapM_ (putStrLn . show) rs
 
 main :: IO ()
 main = do
