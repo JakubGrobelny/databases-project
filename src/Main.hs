@@ -31,9 +31,8 @@ queryFromFile :: String -> IO Query
 queryFromFile filename = fromString <$> readFile filename
 
 isInit :: [String] -> Bool
-isInit [] = False
 isInit ["--init"] = True
-isInit _ = error "Invalid command line argument"
+isInit _ = False
 
 readInput :: IO (Maybe [APIFunction])
 readInput = do
@@ -70,6 +69,8 @@ initialize input =
             case maybeConn of
                 Nothing -> return $ failAll input
                 Just conn -> do
+                    initQuery <- queryFromFile "src/sql/init.sql"
+                    _ <- execute_ conn initQuery
                     results <- runFunctions conn fs
                     close conn
                     return $ Just NoData : results
