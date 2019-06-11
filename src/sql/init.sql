@@ -124,7 +124,12 @@ CREATE USER app WITH ENCRYPTED PASSWORD 'qwerty';
 GRANT SELECT, INSERT, UPDATE ON ALL TABLES IN SCHEMA public TO app;
 
 CREATE FUNCTION trolls(t TIMESTAMP)
-    RETURNS TABLE(member BIGINT, downvotes BIGINT, upvotes BIGINT, active BOOLEAN) AS $X$
+    RETURNS TABLE(
+        member BIGINT, 
+        upvotes BIGINT, 
+        downvotes BIGINT, 
+        active BOOLEAN
+    ) AS $X$
     WITH Usr AS (
         SELECT id AS memberid, (t - last_activity) <= '365 days' AS active
         FROM Member
@@ -133,11 +138,8 @@ CREATE FUNCTION trolls(t TIMESTAMP)
         FROM Action JOIN Usr ON (Action.memberid = Usr.memberid)
         GROUP BY Usr.memberid, Usr.active
     )
-    SELECT memberid as member, downvotes::BIGINT, upvotes::BIGINT, active
+    SELECT memberid as member, upvotes::BIGINT, downvotes::BIGINT, active
     FROM Sums
     WHERE downvotes > upvotes
     ORDER BY downvotes - upvotes DESC, member ASC
 $X$ LANGUAGE SQL;
-
-
-

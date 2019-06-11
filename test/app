@@ -4,4 +4,10 @@
 {"upvote":{"timestamp":10023, "member":1, "password":"abc1", "action":6}}
 {"downvote":{"timestamp":10024, "member":2, "password":"abc2", "action":3}}
 {"trolls":{"timestamp":10050}}
+{"protest":{"timestamp":10070, "member":7, "password":"123", "action":42, "project":43, "authority":44}}
+{"downvote":{"timestamp":10080, "member":1, "password":"abc1", "action":42}}
+{"downvote":{"timestamp":10081, "member":2, "password":"abc2", "action":42}}
+{"downvote":{"timestamp":10082, "member":7, "password":"123", "action":42}}
+{"upvote":{"timestamp":10085, "member":8, "password":"888", "action":42}}
 {"trolls":{"timestamp":234100400}}
+{"actions": {"timestamp":10090, "member":1, "password":"abc1"}}
