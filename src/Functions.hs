@@ -16,6 +16,7 @@ queryFromFile filename = fromString <$> readFile filename
 data ResultValue
     = ResultNum Integer
     | ResultBool Bool
+    | ResultString String
     deriving Show
 
 data Tuple = Tuple [ResultValue] deriving Show
@@ -31,6 +32,7 @@ instance Show FunctionResult where
 instance ToJSON ResultValue where
     toJSON (ResultNum i) = toJSON i
     toJSON (ResultBool b) = toJSON b
+    toJSON (ResultString s) = toJSON s
 
 instance ToJSON Tuple where
     toJSON (Tuple vals) = toJSON vals
@@ -44,9 +46,25 @@ instance ToJSON FunctionResult where
         "status" .= ("OK" :: T.Text),
         "data" .= toJSON d ]
 
+type ActionsResults = [(Integer, Bool, Integer, Integer, Integer, Integer)]
+
+
 trollsToFunctionResult :: [(Integer, Integer, Integer, Bool)] -> FunctionResult
 trollsToFunctionResult = ResultOK . map (\(m,u,d,a) -> 
    Tuple [ResultNum m, ResultNum u, ResultNum d, ResultBool a])
+
+boolToActionType :: Bool -> ResultValue
+boolToActionType True = ResultString "support"
+boolToActionType False = ResultString "protest"
+
+actionsToFunctionResult :: ActionsResults -> FunctionResult
+actionsToFunctionResult = ResultOK . map(\(id,t,p,a,u,d) -> 
+    Tuple [ ResultNum id
+          , boolToActionType t
+          , ResultNum p
+          , ResultNum a
+          , ResultNum u
+          , ResultNum d])
 
 isUnique :: Connection -> Integer -> IO Bool
 isUnique conn id = do
@@ -255,8 +273,8 @@ canAddVote :: Connection -> Integer -> UserData -> IO Bool
 canAddVote conn actionId usr = do
     validAction <- actionExists conn actionId
     correctMember <- isCorrectMember conn usr
-    unique <-  voteExists conn (member usr) actionId
-    return . not $ validAction && correctMember && unique
+    exists <- voteExists conn (member usr) actionId
+    return $ validAction && correctMember && not exists
 
 newVote :: Connection -> NewVote -> Bool -> IO FunctionResult
 newVote conn v isUpvote = do
@@ -270,6 +288,38 @@ newVote conn v isUpvote = do
             addVote conn (member usr) actionId isUpvote
             updateMemberTime conn usr
             return ResultEmptyOK
+
+filterActionsType :: ActionsResults -> Maybe Bool -> ActionsResults
+filterActionsType res Nothing = res
+filterActionsType res (Just b) = filter (\(_,t,_,_,_,_) -> t == b) res
+
+filterActions :: ActionsResults 
+              -> Maybe Integer 
+              -> Maybe Integer 
+              -> ActionsResults
+filterActions res (Just proj) _ = filter (\(_,_,p,_,_,_) -> p == proj) res
+filterActions res _ (Just auth) = filter (\(_,_,_,a,_,_) -> a == auth) res
+filterActions res _ _ = res
+
+fetchActions :: Connection 
+             -> UserData 
+             -> Maybe Bool 
+             -> Maybe Integer 
+             -> Maybe Integer 
+             -> IO FunctionResult
+fetchActions _ _ _ (Just _) (Just _) = return ResultError
+fetchActions conn usr isSupport proj auth = do
+    results <- query_ conn
+        "SELECT a.id, is_support, projectid, p.authorityid, upvotes, downvotes \
+        \FROM Action a JOIN Project p ON (p.id = projectid) \
+        \ORDER BY a.id ASC"
+    let results' = filterActions (filterActionsType results isSupport) proj auth
+    return $ actionsToFunctionResult results'
+
+strToIsSupport :: String -> Maybe Bool
+strToIsSupport "support" = Just True
+strToIsSupport "protest" = Just False
+strToIsSupport _ = Nothing
 
 executeFunction :: Connection -> APIFunction -> IO FunctionResult
 executeFunction conn (Leader usr) = do
@@ -287,3 +337,17 @@ executeFunction conn (Trolls t) = do
     tuples <- query conn "SELECT * FROM trolls(to_timestamp(?)::TIMESTAMP)" $ 
         Only $ timestamp t
     return $ trollsToFunctionResult tuples
+executeFunction conn (Actions act) = do
+    correctUser <- isCorrectLeader conn usr
+    if not correctUser
+        then return ResultError
+        else case t of
+            Nothing -> fetchActions conn usr Nothing p a
+            Just str -> case strToIsSupport str of
+                Nothing -> return ResultError
+                Just b -> fetchActions conn usr (Just b) p a
+    where
+        usr = actionsUser act
+        t = actionsType act
+        p = actionsProject act
+        a = actionsAuthority act

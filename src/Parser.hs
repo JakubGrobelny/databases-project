@@ -84,7 +84,7 @@ data ActionsFilter
 
 data Actions = Actions' 
     { actionsUser      :: UserData
-    , actionType       :: Maybe String
+    , actionsType       :: Maybe String
     , actionsProject   :: Maybe Integer
     , actionsAuthority :: Maybe Integer
     } deriving Show
@@ -92,7 +92,7 @@ data Actions = Actions'
 instance FromJSON Actions where
     parseJSON = withObject "Actions" $ \o -> do
         actionsUser      <- parseJSON $ Object o
-        actionType       <- o .:? "type"
+        actionsType       <- o .:? "type"
         actionsProject   <- o .:? "project"
         actionsAuthority <- o .:? "authority"
         return Actions'{..}
