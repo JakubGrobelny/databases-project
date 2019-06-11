@@ -65,6 +65,11 @@ authorityExists conn id = do
     [Only exists] <- query conn "SELECT authority_exists(?)" (Only id)
     return exists
 
+actionExists :: Connection -> Integer -> IO Bool
+actionExists conn id = do
+    [Only exists] <- query conn "SELECT action_exists(?)" (Only id)
+    return exists
+
 isFrozen :: Connection -> UserData -> IO Bool
 isFrozen conn usr = do
     let (id, timestamp) = (member usr, time usr)
@@ -101,21 +106,39 @@ addProject conn ActionData{authority=Just auth, project=proj} = do
 addMember :: Connection -> UserData -> Bool -> IO ()
 addMember conn UserData{member=mem,passwd=pass,time=timestamp} isLeader = do
     _ <- execute conn "INSERT INTO Member VALUES \
-                \(?, (SELECT crypt(?, gen_salt('md5'))), to_timestamp(?), ?)" 
-                    (mem, pass, timestamp, isLeader)
+        \(?, (SELECT crypt(?, gen_salt('md5'))), to_timestamp(?), ?)" 
+        (mem, pass, timestamp, isLeader)
     return ()
 
 addAction :: Connection -> NewAction -> Bool -> IO ()
 addAction conn newAction isSupport = do
-    _ <- execute conn "INSERT INTO Action VALUES (?, ?, ?, ?)" ( actId 
-                                                               , isSupport
-                                                               , projectId
-                                                               , memberId )
+    _ <- execute conn "INSERT INTO Action VALUES (?, ?, ?, ?)" 
+        ( actId 
+        , isSupport
+        , projectId
+        , memberId )
     return ()
     where
         actId = action $ newActionData newAction
         projectId = project $ newActionData newAction
         memberId = member $ newActionUser newAction
+
+updateActionVoteCount :: Connection -> Integer -> Bool -> IO ()
+updateActionVoteCount conn actionId False = do
+    _ <- execute conn "UPDATE Action SET downvotes = downvotes + 1 WHERE id = ?"
+        (Only actionId)
+    return ()
+updateActionVoteCount conn actionId True = do
+    _ <- execute conn "UPDATE Action SET upvotes = upvotes + 1 WHERE id = ?"
+        (Only actionId)
+    return ()
+    
+
+addVote :: Connection -> Integer -> Integer -> Bool -> IO ()
+addVote conn memberId actionId isUpvote = do
+    _ <- execute conn "INSERT INTO Vote VALUES (?, ?, ?)"
+        (memberId, actionId, isUpvote)
+    updateActionVoteCount conn actionId isUpvote
 
 ensureMemberExists :: Connection -> UserData -> IO ()
 ensureMemberExists conn usr = do
@@ -124,7 +147,6 @@ ensureMemberExists conn usr = do
         then return ()
         else do
             addMember conn usr False
-            return ()
 
 ensureAuthorityExists :: Connection -> Maybe Integer -> IO ()
 ensureAuthorityExists _ Nothing = return ()
@@ -148,15 +170,9 @@ locallyUniqueIdentifiers (Support action) =
     locallyUniqueIdentifiers $ Protest action
 locallyUniqueIdentifiers (Protest actionData) =
     case authority $ newActionData actionData of
-        Nothing -> (proj /= mem
-                 && proj /= act
-                 && act  /= mem)
-        Just auth -> (proj /= auth
-                   && proj /= act
-                   && proj /= mem
-                   && mem /= auth
-                   && mem /= act
-                   && act /= auth)
+        Nothing -> (proj /= mem && proj /= act && act  /= mem)
+        Just auth -> (proj /= auth && proj /= act && proj /= mem 
+                    && mem /= auth && mem /= act  && act /= auth)
     where
         proj = project $ newActionData actionData
         mem = member $ newActionUser actionData
@@ -191,7 +207,7 @@ canAddAction conn act usr = do
 updateMemberTime :: Connection -> UserData -> IO ()
 updateMemberTime conn usr = do
     _ <- execute conn "UPDATE Member SET last_activity = to_timestamp(?) \
-                      \WHERE id = ?" (t, id)
+        \WHERE id = ?" (t, id)
     return ()
     where
         t = time usr
@@ -211,6 +227,25 @@ newAction conn actionData isSupport = do
             updateMemberTime conn usr
             return ResultEmptyOK
 
+canAddVote :: Connection -> Integer -> UserData -> IO Bool
+canAddVote conn actionId usr = do
+    validAction <- actionExists conn actionId
+    correctMember <- isCorrectMember conn usr
+    return $ validAction && correctMember
+
+newVote :: Connection -> NewVote -> Bool -> IO FunctionResult
+newVote conn v isUpvote = do
+    let (usr, actionId) = (newVoteUser v, voteAction v)
+    let locallyUnique = locallyUniqueIdentifiers $ Upvote v
+    canAdd <- canAddVote conn actionId usr
+    if not $ locallyUnique && canAdd
+        then return ResultError
+        else do
+            ensureMemberExists conn usr
+            addVote conn (member usr) actionId isUpvote
+            updateMemberTime conn usr
+            return ResultEmptyOK
+
 executeFunction :: Connection -> APIFunction -> IO FunctionResult
 executeFunction conn (Leader usr) = do
     unique <- isUnique conn $ member usr
@@ -221,3 +256,6 @@ executeFunction conn (Leader usr) = do
             return $ ResultEmptyOK
 executeFunction conn (Support action) = newAction conn action True
 executeFunction conn (Protest action) = newAction conn action False
+executeFunction conn (Upvote vote) = newVote conn vote True
+executeFunction conn (Downvote vote) = newVote conn vote False
+executeFunction _ _ = undefined

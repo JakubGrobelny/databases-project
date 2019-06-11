@@ -83,47 +83,32 @@ data ActionsFilter
     deriving Show
 
 data Actions = Actions' 
-    { actionsUser   :: UserData
-    , actionType    :: Maybe String
-    , actionsFilter :: Maybe ActionsFilter
+    { actionsUser      :: UserData
+    , actionType       :: Maybe String
+    , actionsProject   :: Maybe Integer
+    , actionsAuthority :: Maybe Integer
     } deriving Show
 
 instance FromJSON Actions where
     parseJSON = withObject "Actions" $ \o -> do
-        actionsUser <- parseJSON $ Object o
-        actionType  <- o .:? "type"
-        project     <- o .:? "project"
-        case project of
-            Nothing -> do
-                authority <- o .:? "authority"
-                let filter = authority >>= Just . ActionsAuthority
-                return $ Actions' actionsUser actionType filter
-            Just p -> do
-                let filter = Just $ ActionsProject p
-                return $ Actions' actionsUser actionType filter
-
-data VotesFilter
-    = VotesAction Integer
-    | VotesProject Integer
-    deriving Show
+        actionsUser      <- parseJSON $ Object o
+        actionType       <- o .:? "type"
+        actionsProject   <- o .:? "project"
+        actionsAuthority <- o .:? "authority"
+        return Actions'{..}
 
 data Votes = Votes' 
-    { votesUser :: UserData
-    , votesFilter :: Maybe VotesFilter 
+    { votesUser    :: UserData
+    , votesAction  :: Maybe Integer
+    , votesProject :: Maybe Integer
     } deriving Show
 
 instance FromJSON Votes where
     parseJSON = withObject "Votes" $ \o -> do
-        votesUser <- parseJSON $ Object o
-        action <- o .:? "action"
-        case action of
-            Nothing -> do
-                project <- o .:? "project"
-                let filter = project >>= Just . VotesProject
-                return $ Votes' votesUser filter
-            Just a -> do
-                let filter = Just $ VotesAction a
-                return $ Votes' votesUser filter
+        votesUser    <- parseJSON $ Object o
+        votesAction  <- o .:? "action"
+        votesProject <- o .:? "project"
+        return Votes'{..}
 
 data TrollsTimestamp = TrollsTimestamp { timestamp :: Integer } deriving Show
 

@@ -4,6 +4,7 @@ DROP FUNCTION IF EXISTS member_exists;
 DROP FUNCTION IF EXISTS project_exists;
 DROP FUNCTION IF EXISTS authority_exists;
 DROP FUNCTION IF EXISTS correct_password;
+DROP FUNCTION IF EXISTS action_exists;
 DROP TABLE IF EXISTS Vote;
 DROP TABLE IF EXISTS Action;
 DROP TABLE IF EXISTS Member;
@@ -39,7 +40,7 @@ CREATE TABLE Action (
     projectid  BIGINT  NOT NULL,
     memberid   BIGINT  NOT NULL,
     upvotes    BIGINT  DEFAULT 0 NOT NULL,
-    downvwotes BIGINT  DEFAULT 0 NOT NULL,
+    downvotes BIGINT  DEFAULT 0 NOT NULL,
 
     CONSTRAINT action_projectid_fkey
         FOREIGN KEY (projectid)
@@ -65,8 +66,6 @@ CREATE TABLE Vote (
         FOREIGN KEY (actionid)
         REFERENCES Action (id)
 );
-
-CREATE USER app WITH ENCRYPTED PASSWORD 'qwerty';
 
 CREATE FUNCTION is_unique(BIGINT)
     RETURNS BOOLEAN AS $X$
@@ -108,3 +107,11 @@ CREATE FUNCTION authority_exists(BIGINT)
     RETURNS BOOLEAN AS $X$
     SELECT $1 IN (SELECT id FROM Authority)
 $X$ LANGUAGE SQL STABLE;
+
+CREATE FUNCTION action_exists(BIGINT)
+    RETURNS BOOLEAN AS $X$
+    SELECT $1 IN (SELECT id FROM Action)
+$X$ LANGUAGE SQL STABLE;
+
+CREATE USER app WITH ENCRYPTED PASSWORD 'qwerty';
+GRANT SELECT, INSERT, UPDATE ON ALL TABLES IN SCHEMA public TO app;

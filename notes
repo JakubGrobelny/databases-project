@@ -17,3 +17,8 @@ DROP TABLE IF EXISTS Member;
 DROP TABLE IF EXISTS Project;
 DROP TABLE IF EXISTS Authority;
 DROP ROLE IF EXISTS app;
+
+DROP DATABASE partydb;
+CREATE DATABASE partydb OWNER = init;
+\connect partydb
+CREATE EXTENSION pgcrypto;
