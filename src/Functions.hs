@@ -4,7 +4,6 @@ module Functions where
 
 import Database.PostgreSQL.Simple
 import Data.Aeson
-import Data.Text
 import Parser
 import Data.String
 import qualified Data.ByteString.Lazy as B
@@ -23,7 +22,7 @@ data Tuple = Tuple [ResultValue] deriving Show
 
 data FunctionResult
     = ResultError
-    | ResultOk [Tuple]
+    | ResultOK [Tuple]
     | ResultEmptyOK
 
 instance Show FunctionResult where
@@ -38,12 +37,16 @@ instance ToJSON Tuple where
 
 instance ToJSON FunctionResult where
     toJSON ResultError = object [
-        "status" .= ("ERROR" :: Text) ]    
+        "status" .= ("ERROR" :: T.Text) ]    
     toJSON ResultEmptyOK = object [
-        "status" .= ("OK" :: Text) ]    
-    toJSON (ResultOk d) = object [
-        "status" .= ("OK" :: Text),
+        "status" .= ("OK" :: T.Text) ]    
+    toJSON (ResultOK d) = object [
+        "status" .= ("OK" :: T.Text),
         "data" .= toJSON d ]
+
+trollsToFunctionResult :: [(Integer, Integer, Integer, Bool)] -> FunctionResult
+trollsToFunctionResult = ResultOK . map (\(m,u,d,a) -> 
+   Tuple [ResultNum m, ResultNum u, ResultNum d, ResultBool a])
 
 isUnique :: Connection -> Integer -> IO Bool
 isUnique conn id = do
@@ -70,14 +73,19 @@ actionExists conn id = do
     [Only exists] <- query conn "SELECT action_exists(?)" (Only id)
     return exists
 
+voteExists :: Connection -> Integer -> Integer -> IO Bool
+voteExists conn memberId actionId = do
+    [Only exists] <- query conn "SELECt vote_exists(?,?)" (memberId, actionId)
+    return exists
+
 isFrozen :: Connection -> UserData -> IO Bool
 isFrozen conn usr = do
     let (id, timestamp) = (member usr, time usr)
     [Only frozen] <- query conn "SELECT is_frozen(?, ?)" (id, timestamp)
     return frozen
 
-correctPassword :: Connection -> UserData -> IO Bool 
-correctPassword conn usr = do
+isCorrectPassword :: Connection -> UserData -> IO Bool 
+isCorrectPassword conn usr = do
     let (id, pass) = (member usr, passwd usr)
     [Only correct] <- query conn "SELECT correct_password(?,?)" (id, pass)
     return correct
@@ -89,9 +97,25 @@ isCorrectMember conn usr = do
         then isUnique conn $ member usr
         else do
             frozen <- isFrozen conn usr
-            correctPassword <- correctPassword conn usr
-            return $ not frozen && correctPassword
+            isCorrectPassword <- isCorrectPassword conn usr
+            return $ not frozen && isCorrectPassword
                                                            
+isLeader :: Connection -> Integer -> IO Bool
+isLeader conn memberId = do
+    [Only leader] <- query conn "SELECT is_leader(?)" (Only memberId)
+    return leader
+
+isCorrectLeader :: Connection -> UserData -> IO Bool
+isCorrectLeader conn usr = do
+    exists <- memberExists conn $ member usr
+    if not exists
+        then return False
+        else do
+            frozen <- isFrozen conn usr
+            isCorrectPassword <- isCorrectPassword conn usr
+            leader <- isLeader conn $ member usr
+            return $ not frozen && isCorrectPassword && leader
+
 addAuthority :: Connection -> Integer -> IO ()
 addAuthority conn id = do
     _ <- execute conn "INSERT INTO Authority VALUES (?)" (Only id)
@@ -231,7 +255,8 @@ canAddVote :: Connection -> Integer -> UserData -> IO Bool
 canAddVote conn actionId usr = do
     validAction <- actionExists conn actionId
     correctMember <- isCorrectMember conn usr
-    return $ validAction && correctMember
+    unique <-  voteExists conn (member usr) actionId
+    return . not $ validAction && correctMember && unique
 
 newVote :: Connection -> NewVote -> Bool -> IO FunctionResult
 newVote conn v isUpvote = do
@@ -258,4 +283,7 @@ executeFunction conn (Support action) = newAction conn action True
 executeFunction conn (Protest action) = newAction conn action False
 executeFunction conn (Upvote vote) = newVote conn vote True
 executeFunction conn (Downvote vote) = newVote conn vote False
-executeFunction _ _ = undefined
+executeFunction conn (Trolls t) = do
+    tuples <- query conn "SELECT * FROM trolls(to_timestamp(?)::TIMESTAMP)" $ 
+        Only $ timestamp t
+    return $ trollsToFunctionResult tuples
