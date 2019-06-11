@@ -1,3 +1,5 @@
 {"open": {"database":"partydb", "login":"app", "password":"qwerty"}}
 {"protest":{"timestamp":10020, "member":1, "password":"abc1", "action":3, "project":4, "authority":5}}
-{"support":{"timestamp":10022, "member":2, "password":"abc2", "action":6, "project":4, "authority":5}}
+{"support":{"timestamp":10022, "member":2, "password":"abc2", "action":6, "project":4}}
+{"upvote":{"timestamp":10023, "member":1, "password":"abc1", "action":6}}
+{"downvote":{"timestamp":10024, "member":2, "password":"abc2", "action":3}}
