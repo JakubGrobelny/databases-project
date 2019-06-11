@@ -66,6 +66,10 @@ actionsToFunctionResult = ResultOK . map(\(id,t,p,a,u,d) ->
           , ResultNum u
           , ResultNum d])
 
+projectsToFunctionResult :: [(Integer, Integer)] -> FunctionResult
+projectsToFunctionResult = ResultOK . map(\(p,a) -> 
+    Tuple [ ResultNum p, ResultNum a ])
+
 isUnique :: Connection -> Integer -> IO Bool
 isUnique conn id = do
     [Only unique] <- query conn "SELECT is_unique(?)" (Only id)
@@ -351,3 +355,15 @@ executeFunction conn (Actions act) = do
         t = actionsType act
         p = actionsProject act
         a = actionsAuthority act
+executeFunction conn (Projects projects) = do
+    correctUser <- isCorrectLeader conn $ projectsUser projects
+    if not correctUser
+        then return ResultError
+        else do
+            results <- query_ conn "SELECT * FROM Project ORDER BY id"
+            case projectsAuthority projects of
+                Nothing -> return $ projectsToFunctionResult results
+                Just auth -> 
+                    return $ 
+                        projectsToFunctionResult $ 
+                        filter ((== auth) . snd) $ results
