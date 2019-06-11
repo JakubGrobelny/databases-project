@@ -5,6 +5,9 @@ DROP FUNCTION IF EXISTS project_exists;
 DROP FUNCTION IF EXISTS authority_exists;
 DROP FUNCTION IF EXISTS correct_password;
 DROP FUNCTION IF EXISTS action_exists;
+DROP FUNCTION IF EXISTS is_leader;
+DROP FUNCTION IF EXISTS trolls;
+DROP FUNCTION IF EXISTS vote_exists;
 DROP TABLE IF EXISTS Vote;
 DROP TABLE IF EXISTS Action;
 DROP TABLE IF EXISTS Member;
@@ -12,7 +15,6 @@ DROP TABLE IF EXISTS Project;
 DROP TABLE IF EXISTS Authority;
 DROP ROLE IF EXISTS app;
 -- for debugging
-
 
 CREATE TABLE Authority (
     id BIGINT PRIMARY KEY
@@ -69,20 +71,15 @@ CREATE TABLE Vote (
 
 CREATE FUNCTION is_unique(BIGINT)
     RETURNS BOOLEAN AS $X$
-    SELECT $1 NOT IN (
-        (SELECT id FROM Member)
-        UNION
-        (SELECT id FROM Authority)
-        UNION
-        (SELECT id FROM Project)
-        UNION
-        (SELECT id FROM Action)
-    )
+    SELECT $1 NOT IN (SELECT id FROM Member)    AND
+           $1 NOT IN (SELECT id FROM Authority) AND
+           $1 NOT IN (SELECT id FROM Project)   AND
+           $1 NOT IN (SELECT id FROM Action)
 $X$ LANGUAGE SQL STABLE;
 
 CREATE FUNCTION is_frozen(BIGINT, BIGINT)
     RETURNS BOOLEAN AS $X$
-    SELECT (to_timestamp($2) - last_activity) >= '365 days'
+    SELECT (to_timestamp($2) - last_activity) > '365 days'
     FROM Member
     WHERE id = $1
 $X$ LANGUAGE SQL STABLE;
@@ -96,6 +93,11 @@ $X$ LANGUAGE SQL STABLE;
 CREATE FUNCTION member_exists(BIGINT)
     RETURNS BOOLEAN AS $X$
     SELECT $1 IN (SELECT id FROM Member)
+$X$ LANGUAGE SQL STABLE;
+
+CREATE FUNCTION vote_exists(m BIGINT, a BIGINT)
+    RETURNS BOOLEAN AS $X$
+    SELECT (m,a) IN (SELECT memberid, actionid FROM Vote)
 $X$ LANGUAGE SQL STABLE;
 
 CREATE FUNCTION project_exists(BIGINT)
@@ -113,5 +115,29 @@ CREATE FUNCTION action_exists(BIGINT)
     SELECT $1 IN (SELECT id FROM Action)
 $X$ LANGUAGE SQL STABLE;
 
+CREATE FUNCTION is_leader(BIGINT)
+    RETURNS BOOLEAN AS $X$
+    SELECT is_leader FROM Member WHERE id = $1
+$X$ LANGUAGE SQL STABLE;
+
 CREATE USER app WITH ENCRYPTED PASSWORD 'qwerty';
 GRANT SELECT, INSERT, UPDATE ON ALL TABLES IN SCHEMA public TO app;
+
+CREATE FUNCTION trolls(t TIMESTAMP)
+    RETURNS TABLE(member BIGINT, downvotes BIGINT, upvotes BIGINT, active BOOLEAN) AS $X$
+    WITH Usr AS (
+        SELECT id AS memberid, (t - last_activity) <= '365 days' AS active
+        FROM Member
+    ), Sums AS (
+        SELECT Usr.memberid, SUM(downvotes) AS downvotes, SUM(upvotes) AS upvotes, active
+        FROM Action JOIN Usr ON (Action.memberid = Usr.memberid)
+        GROUP BY Usr.memberid, Usr.active
+    )
+    SELECT memberid as member, downvotes::BIGINT, upvotes::BIGINT, active
+    FROM Sums
+    WHERE downvotes > upvotes
+    ORDER BY downvotes - upvotes DESC, member ASC
+$X$ LANGUAGE SQL;
+
+
+
