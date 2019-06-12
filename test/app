@@ -13,4 +13,6 @@
 {"projects":{"timestamp":10091, "member":1, "password":"abc1"}}
 {"projects":{"timestamp":10092, "member":1, "password":"abc1", "authority":5}}
 {"actions": {"timestamp":10093, "member":1, "password":"abc1", "type":"protest", "authority":44}}
+{"votes": {"timestamp":10094, "member":1, "password":"abc1"}}
+{"votes": {"timestamp":10095, "member":1, "password":"abc1", "project":4}}
 {"trolls":{"timestamp":234100400}}
