@@ -1,0 +1,33 @@
+{"open": {"database": "partydb", "login": "app", "password": "qwerty"}}
+{"support": {"timestamp": 1, "member": 0, "password": "0", "action": 20, "project": 40, "authority": 60}}
+{"support": {"timestamp": 2, "member": 1, "password": "1", "action": 21, "project": 40}}
+{"support": {"timestamp": 3, "member": 0, "password": "0", "action": 22, "project": 41, "authority": 61}}
+{"protest": {"timestamp": 4, "member": 10, "password": "10", "action": 23, "project": 42, "authority": 62}}
+{"support": {"timestamp": 5, "member": 11, "password": "11", "action": 24, "project": 42}}
+{"protest": {"timestamp": 6, "member": 12, "password": "12", "action": 25, "project": 43, "authority": 60}}
+{"protest": {"timestamp": 11, "member": 13, "password": "13", "action": 26, "project": 42}}
+{"upvote": {"timestamp": 11, "member": 0, "password": "0", "action": 20}}
+{"upvote": {"timestamp": 11, "member": 0, "password": "0", "action": 21}}
+{"downvote": {"timestamp": 11, "member": 0, "password": "0", "action": 22}}
+{"downvote": {"timestamp": 12, "member": 0, "password": "0", "action": 26}}
+{"upvote": {"timestamp": 13, "member": 1, "password": "1", "action": 26}}
+{"downvote": {"timestamp": 15, "member": 1, "password": "1", "action": 20}}
+{"downvote": {"timestamp": 16, "member": 1, "password": "1", "action": 25}}
+{"upvote": {"timestamp": 17, "member": 10, "password": "10", "action": 20}}
+{"upvote": {"timestamp": 18, "member": 10, "password": "10", "action": 21}}
+{"upvote": {"timestamp": 19, "member": 10, "password": "10", "action": 23}}
+{"upvote": {"timestamp": 20, "member": 10, "password": "10", "action": 24}}
+{"upvote": {"timestamp": 21, "member": 12, "password": "12", "action": 20}}
+{"upvote": {"timestamp": 22, "member": 12, "password": "12", "action": 24}}
+{"downvote": {"timestamp": 23, "member": 12, "password": "12", "action": 26}}
+{"upvote": {"timestamp": 24, "member": 11, "password": "11", "action": 23}}
+{"actions": {"timestamp": 25, "member": 0, "password": "0"}}
+{"actions": {"timestamp": 26, "member": 0, "password": "0", "type": "protest"}}
+{"actions": {"timestamp": 27, "member": 0, "password": "0", "project": 42}}
+{"actions": {"timestamp": 28, "member": 0, "password": "0", "authority": 60}}
+{"projects": {"timestamp": 29, "member": 1, "password": "1"}}
+{"projects": {"timestamp": 30, "member": 1, "password": "1", "authority":62}}
+{"votes": {"timestamp": 31, "member": 2, "password": "2"}}
+{"votes": {"timestamp": 32, "member": 2, "password": "2", "action": 23}}
+{"votes": {"timestamp": 33, "member": 2, "password": "2", "project": 42}}
+{"trolls": {"timestamp": 34}}
