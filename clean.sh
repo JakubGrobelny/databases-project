@@ -1,0 +1,2 @@
+cabal clean; 
+rm exe

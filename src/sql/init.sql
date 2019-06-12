@@ -1,3 +1,4 @@
+-- for testing purposes
 DROP FUNCTION IF EXISTS is_frozen;
 DROP FUNCTION IF EXISTS is_unique;
 DROP FUNCTION IF EXISTS member_exists;
@@ -17,7 +18,9 @@ DROP TABLE IF EXISTS Member;
 DROP TABLE IF EXISTS Project;
 DROP TABLE IF EXISTS Authority;
 DROP ROLE IF EXISTS app;
--- for debugging
+
+
+-- physical data model
 
 CREATE TABLE Authority (
     id BIGINT PRIMARY KEY
