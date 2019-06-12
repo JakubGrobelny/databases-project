@@ -48,7 +48,6 @@ instance ToJSON FunctionResult where
 
 type ActionsResults = [(Integer, Bool, Integer, Integer, Integer, Integer)]
 
-
 trollsToFunctionResult :: [(Integer, Integer, Integer, Bool)] -> FunctionResult
 trollsToFunctionResult = ResultOK . map (\(m,u,d,a) -> 
    Tuple [ResultNum m, ResultNum u, ResultNum d, ResultBool a])
@@ -69,6 +68,10 @@ actionsToFunctionResult = ResultOK . map(\(id,t,p,a,u,d) ->
 projectsToFunctionResult :: [(Integer, Integer)] -> FunctionResult
 projectsToFunctionResult = ResultOK . map(\(p,a) -> 
     Tuple [ ResultNum p, ResultNum a ])
+
+votesToFunctionResult :: [(Integer, Integer, Integer)] -> FunctionResult
+votesToFunctionResult = ResultOK . map(\(m,u,d) ->
+    Tuple [ ResultNum m, ResultNum u, ResultNum d ])
 
 isUnique :: Connection -> Integer -> IO Bool
 isUnique conn id = do
@@ -325,6 +328,21 @@ strToIsSupport "support" = Just True
 strToIsSupport "protest" = Just False
 strToIsSupport _ = Nothing
 
+fetchVotes :: Connection -> IO FunctionResult
+fetchVotes conn = do
+    results <- query_ conn "SELECT * FROM get_votes()"
+    return $ votesToFunctionResult results
+
+fetchVotesWithAction :: Connection -> Integer -> IO FunctionResult
+fetchVotesWithAction conn act = do
+    results <- query conn "SELECT * FROM get_votes_with_action(?)" $ Only act
+    return $ votesToFunctionResult results
+
+fetchVotesWithProject :: Connection -> Integer -> IO FunctionResult
+fetchVotesWithProject conn proj = do
+    results <- query conn "SELECT * FROM get_votes_with_project(?)" $ Only proj
+    return $ votesToFunctionResult results
+    
 executeFunction :: Connection -> APIFunction -> IO FunctionResult
 executeFunction conn (Leader usr) = do
     unique <- isUnique conn $ member usr
@@ -346,10 +364,14 @@ executeFunction conn (Actions act) = do
     if not correctUser
         then return ResultError
         else case t of
-            Nothing -> fetchActions conn usr Nothing p a
+            Nothing -> do
+                updateMemberTime conn $ actionsUser act
+                fetchActions conn usr Nothing p a
             Just str -> case strToIsSupport str of
                 Nothing -> return ResultError
-                Just b -> fetchActions conn usr (Just b) p a
+                Just b -> do
+                    updateMemberTime conn $ actionsUser act
+                    fetchActions conn usr (Just b) p a
     where
         usr = actionsUser act
         t = actionsType act
@@ -360,6 +382,7 @@ executeFunction conn (Projects projects) = do
     if not correctUser
         then return ResultError
         else do
+            updateMemberTime conn $ projectsUser projects
             results <- query_ conn "SELECT * FROM Project ORDER BY id"
             case projectsAuthority projects of
                 Nothing -> return $ projectsToFunctionResult results
@@ -367,3 +390,18 @@ executeFunction conn (Projects projects) = do
                     return $ 
                         projectsToFunctionResult $ 
                         filter ((== auth) . snd) $ results
+executeFunction conn (Votes votes) = do
+    correctUser <- isCorrectLeader conn $ votesUser votes
+    if not correctUser
+        then return ResultError
+        else case (votesAction votes, votesProject votes) of
+            (Just _, Just _) -> return ResultError
+            (Nothing, Nothing) -> do
+                updateMemberTime conn $ votesUser votes
+                fetchVotes conn
+            (Just action, Nothing) -> do
+                updateMemberTime conn $ votesUser votes
+                fetchVotesWithAction conn action
+            (Nothing, Just project) -> do
+                updateMemberTime conn $ votesUser votes
+                fetchVotesWithProject conn project
