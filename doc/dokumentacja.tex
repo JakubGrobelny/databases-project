@@ -142,13 +142,13 @@ API zostanie zaimplementowane we jęzku \textit{Haskell} przy użyciu biblioteki
 
 \section{Sposób uruchomienia aplikacji}
 
-Przed uruchomieniem programu należy zainstalować \texttt{ghc} oraz 
+Przed uruchomieniem programu należy zainstalować \texttt{ghc}, \texttt{libpq-dev} oraz 
 \texttt{cabal-install}.
 Aby skompilować aplikację należy albo uruchomić skrypt \texttt{build.sh} albo
 wykonać następujące polecenia:
 \begin{itemize}
-    \item{\texttt{cabal update}}
     \item{\texttt{cabal sandbox init}}
+    \item{\texttt{cabal update}}
     \item{\texttt{cabal install ----only-dependencies}}
     \item{\texttt{cabal build}}
 \end{itemize}
@@ -156,10 +156,9 @@ wykonać następujące polecenia:
 Skompilowany plik wykonywalny pojawi się w folderze projektu w katalogu 
 \texttt{dist/build/databases-project}, i będzie miał nazwę \texttt{databases-project}.
 
-Dodatkowo w głównym folderze projektu po skompilowaniu znajdować będzie się skrót
+Dodatkowo w głównym folderze projektu po skompilowaniu (przy użyciu skryptu \texttt{build.sh}) znajdować będzie się skrót
 \texttt{exe} do wygodniejszego uruchamiania programu.
 
 Aby usunąć pliki powstałe po kompilacji należy uruchomić skrypt \texttt{clean.sh}.
-
 
 \end{document}
