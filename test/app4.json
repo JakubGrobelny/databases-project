@@ -1,0 +1,34 @@
+{ "open": { "database": "partydb", "login": "app", "password": "qwerty"}}
+{"protest": {"timestamp": 1557475700, "password": "123", "member": 3, "action": 500, "project": 5000, "authority": 10000}}
+{"support": {"timestamp": 1557475701, "password": "123", "member": 3, "action": 600, "project": 5000}}
+{"support": {"timestamp": 1557475701, "password": "abc", "member": 1, "action": 601, "project": 5001, "authority": 10000}}
+{"support": {"timestamp": 1557475701, "password": "abc", "member": 1, "action": 602, "project": 5002, "authority": 10001}}
+{"support": {"timestamp": 1557475701, "password": "cztery", "member": 4, "action": 700, "project": 5000}}
+{"protest": {"timestamp": 1557475721, "password": "piec", "member": 5, "action": 701, "project": 5000}}
+{"support": {"timestamp": 1557475701, "password": "456", "member": 3, "action": 700, "project": 5000}}
+{"support": {"timestamp": 1557475701, "password": "cztery", "member": 4, "action": 600, "project": 5000}}
+{"support": {"timestamp": 1557475701, "password": "cztery", "member": 4, "action": 600, "project": 6000}}
+{"projects": {"timestamp": 1557475795, "password": "abc", "member": 1, "authority": 2}}
+{"projects": {"timestamp": 1557475795, "password": "abc", "member": 1, "authority": 10000}}
+{"projects": {"timestamp": 1557475795, "password": "abc", "member": 1}}
+{ "upvote": { "timestamp": 1557475712, "password": "kot", "member": 2, "action":500}}
+{ "downvote": { "timestamp": 1557475713, "password": "abc", "member": 1, "action":500}}
+{ "downvote": { "timestamp": 1557475713, "password": "123", "member": 3, "action":500}}
+{ "downvote": { "timestamp": 1557475713, "password": "cztery", "member": 4, "action":500}}
+{ "upvote": { "timestamp": 1557475713, "password": "cztery", "member": 4, "action":601}}
+{ "downvote": { "timestamp": 1557475714, "password": "abc", "member": 1, "action":600}}
+{ "upvote": { "timestamp": 1557475714, "password": "abc", "member": 1, "action":600}}
+{ "upvote": { "timestamp": 1557475715, "password": "123", "member": 3, "action":699}}
+{"actions": {"timestamp": 1557475796, "password": "abc", "member": 1}}
+{"actions": {"timestamp": 1557475796, "password": "abc", "member": 1, "type": "support"}}
+{"actions": {"timestamp": 1557475796, "password": "abc", "member": 1, "project": 5000}}
+{"actions": {"timestamp": 1557475796, "password": "abc", "member": 1, "type": "support", "project": 5000}}
+{"actions": {"timestamp": 1557475796, "password": "abc", "member": 1, "authority": 10000}}
+{"actions": {"timestamp": 1557475796, "password": "abc", "member": 1, "project": 5000, "authority": 10000}}
+{"actions": {"timestamp": 1557475796, "password": "abc", "member": 1, "authority": 2}}
+{ "votes": { "timestamp": 1557475715, "password": "abc", "member": 1}} 
+{ "votes": { "timestamp": 1557475715, "password": "abc", "member": 1, "action":500}}
+{ "votes": { "timestamp": 1557475715, "password": "abc", "member": 1, "project": 5001}}
+{ "votes": { "timestamp": 1557475715, "password": "abc", "member": 1, "action":500, "project": 5001}}
+{ "votes": { "timestamp": 1557475715, "password": "abc", "member": 1, "project": 2}}
+{ "trolls": { "timestamp": 1557477055 }}
